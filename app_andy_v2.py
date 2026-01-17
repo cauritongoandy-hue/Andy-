@@ -242,14 +242,22 @@ def _hampel_outlier_mask(x: _pd.Series, window: int = 21, n_sigmas: float = 3.5)
 
 def _rolling_median_mad(x: _pd.Series, win: int = 51):
     half = max(1, win // 2)
+
     med = x.rolling(win, center=True, min_periods=half).median()
 
     def _mad(v):
         m = _np.nanmedian(v)
         return _np.nanmedian(_np.abs(v - m))
 
-    mad = x.rolling(win, center=True, min_periods=half).apply(_mad, raw=False).replace(0, _np.nan)
+    mad = x.rolling(win, center=True, min_periods=half).apply(_mad, raw=False)
+
+    # FIX: evitar NaN por MAD=0 y por bordes de ventana
+    eps = 1e-12
+    mad = mad.fillna(method="bfill").fillna(method="ffill")
+    mad = mad.clip(lower=eps)
+
     return med, mad
+
 
 def _tukey_weight(z: _pd.Series, c: float = 4.5) -> _pd.Series:
     a = (1 - (z / c) ** 2) ** 2
@@ -266,7 +274,7 @@ def _stuck_weight(x: _pd.Series, win: int = 41, std_min: float = 0.01) -> _pd.Se
     return 1.0 / (1.0 + _np.exp((std_min - roll_std) / (0.25 * std_min)))
 
 def _coverage_from_contrib(df_g: _pd.DataFrame, incluidos, q_min: float, pot: float):
-    Q = df_g[[f"Q__{s}" for s in incluidos]].copy()
+    Q = df_g[[f"Q__{s}" for s in incluidos]].copy().fillna(0.0)
     M = (Q >= q_min).astype(float)
     W = (Q.clip(lower=0.0) ** pot) * M
     mask = (W.sum(axis=1).values > 0)
@@ -304,7 +312,7 @@ Q_soft = (W_band * W_hamp * W_rng * W_stuck).clip(0.0, 1.0)
 for s in cols_grupo:
     df_g[f"Q__{s}"] = Q_soft[s].astype(float)
 
-_q_min, _pot = 0.35, 1.5
+_q_min, _pot = 0.5, 1.5
 cov, _contrib_mask = _coverage_from_contrib(df_g, cols_grupo, q_min=_q_min, pot=_pot)
 loss = 100.0 - cov
 
