@@ -106,7 +106,7 @@ st.title("Algoritmo de Fusón de datos")
 
 with st.sidebar:
     st.header("Configuración")
-    corr_min = st.slider("Correlación mínima", 0.0, 1.0, 0.85, 0.01)
+    corr_min = st.slider("Correlación mínima", 0.75, 1.0, 0.85, 0.01)
     uploaded = st.file_uploader("Sube tu dataset", type=["csv", "xlsx", "xls"])
 
 df = leer_datos(uploaded)
