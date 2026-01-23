@@ -102,7 +102,7 @@ def fusionar_grupo_simple(df_T: pd.DataFrame, cols: list) -> pd.Series:
 # =========================
 # UI principal
 # =========================
-st.title("Algoritmo de Fusón de datos")
+st.title("Algoritmo de Fusión de datos")
 
 with st.sidebar:
     st.header("Configuración")
